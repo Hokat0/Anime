@@ -318,37 +318,74 @@
     let allAnime = [];
     let watchedList = JSON.parse(localStorage.getItem('watched')) || [];
 
+    // Резервные аниме (если API не отвечает)
+    const fallbackAnime = [
+      {
+        names: { ru: 'Токийский Гуль', en: 'Tokyo Ghoul' },
+        posters: { large: { url: 'https://anilibria.tv/upload/posters/5200/5184.jpg' } },
+        year: 2014,
+        status: 'Завершено',
+        code: 'tokyo-ghoul',
+        description: 'Юноша превращается в полугуля и борется за выживание.'
+      },
+      {
+        names: { ru: 'Наруто', en: 'Naruto' },
+        posters: { large: { url: 'https://anilibria.tv/upload/posters/1/2.jpg' } },
+        year: 2002,
+        status: 'Завершено',
+        code: 'naruto',
+        description: 'Мальчик-ниндзя мечтает стать хокаге.'
+      },
+      {
+        names: { ru: 'Врата Штейна', en: 'Steins;Gate' },
+        posters: { large: { url: 'https://anilibria.tv/upload/posters/3500/3457.jpg' } },
+        year: 2011,
+        status: 'Завершено',
+        code: 'steins-gate',
+        description: 'Группа учёных случайно изобретает машину времени.'
+      }
+    ];
+
     // Загрузка случайных аниме
     async function loadRandomAnime() {
       try {
         const res = await fetch('https://api.anilibria.tv/v3/titles/random?limit=3');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const list = Array.isArray(data) ? data : [data];
-        randomList.innerHTML = '';
-        list.forEach(item => {
-          const title = item.names.ru || item.names.en || 'Без названия';
-          const poster = item.posters?.large?.url ? `https://anilibria.tv${item.posters.large.url}` : 'https://via.placeholder.com/200x280/333/fff?text=Аниме';
-          const card = document.createElement('div');
-          card.className = 'random-card';
-          card.onclick = () => openAnime(item);
-          card.innerHTML = `
-            <img src="${poster}" alt="${title}">
-            <div class="random-info">
-              <h3>${title}</h3>
-              <p>${item.year || '—'} | ${item.status || '—'}</p>
-            </div>
-          `;
-          randomList.appendChild(card);
-        });
+        displayRandomAnime(list);
       } catch (err) {
-        randomList.innerHTML = `<div class="error">Не удалось загрузить случайные аниме</div>`;
+        console.warn('API AniLibria недоступен, используем резервные данные:', err);
+        displayRandomAnime(fallbackAnime);
       }
+    }
+
+    function displayRandomAnime(animeArray) {
+      randomList.innerHTML = '';
+      animeArray.forEach(item => {
+        const title = item.names.ru || item.names.en || 'Без названия';
+        const poster = item.posters?.large?.url 
+          ? `https://anilibria.tv${item.posters.large.url}` 
+          : 'https://via.placeholder.com/200x280/333/fff?text=Аниме';
+        const card = document.createElement('div');
+        card.className = 'random-card';
+        card.onclick = () => openAnime(item);
+        card.innerHTML = `
+          <img src="${poster}" alt="${title}" onerror="this.src='https://via.placeholder.com/200x280/333/fff?text=Ошибка'">
+          <div class="random-info">
+            <h3>${title}</h3>
+            <p>${item.year || '—'} | ${item.status || '—'}</p>
+          </div>
+        `;
+        randomList.appendChild(card);
+      });
     }
 
     // Загрузка полного списка
     async function loadAnime() {
       try {
         const res = await fetch('https://api.anilibria.tv/v3/titles?limit=50&filter[code,names,genres,year,description,posters]');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         allAnime = data.list || [];
 
@@ -363,8 +400,8 @@
 
         displayAnime(allAnime);
       } catch (err) {
-        animeList.innerHTML = `<div class="error">Ошибка загрузки. Проверь подключение.</div>`;
-        console.error(err);
+        console.error('Ошибка загрузки списка:', err);
+        animeList.innerHTML = `<div class="error">Не удалось загрузить аниме. Проверь подключение.</div>`;
       }
     }
 
@@ -377,7 +414,9 @@
       animeArray.forEach((item, i) => {
         setTimeout(() => {
           const title = item.names.ru || item.names.en || 'Без названия';
-          const poster = item.posters?.large?.url ? `https://anilibria.tv${item.posters.large.url}` : 'https://via.placeholder.com/220x300/333/fff?text=Аниме';
+          const poster = item.posters?.large?.url 
+            ? `https://anilibria.tv${item.posters.large.url}` 
+            : 'https://via.placeholder.com/220x300/333/fff?text=Аниме';
           const desc = item.description ? item.description.substring(0, 80) + '...' : 'Нет описания';
 
           const card = document.createElement('div');
@@ -390,7 +429,7 @@
             card.appendChild(badge);
           }
           card.innerHTML += `
-            <img src="${poster}" alt="${title}">
+            <img src="${poster}" alt="${title}" onerror="this.src='https://via.placeholder.com/220x300/333/fff?text=Ошибка'">
             <div class="info">
               <h3>${title}</h3>
               <p>${desc}</p>
@@ -427,8 +466,9 @@
             btn.textContent = `Серия ${ep}`;
             btn.onclick = () => {
               const url = info.hls?.['1080'] || info.hls?.['720'] || info.url;
-              document.getElementById('animeVideo').src = url;
-              document.getElementById('animeVideo').play();
+              const video = document.getElementById('animeVideo');
+              video.src = url;
+              video.play();
               markAsWatched(code);
             };
             eps.appendChild(btn);
@@ -497,9 +537,9 @@
     // Загрузка при старте
     loadRandomAnime();
     loadAnime();
-  </script>
 
-  <!-- Счётчики (как на yummyani.me) -->
-  <img src="https://mc.yandex.ru/watch/92092678" style="display:none" alt="">
+    // Счётчик (как на ru.yummyani.me)
+    new Image().src = "https://mc.yandex.ru/watch/92092678";
+  </script>
 </body>
 </html>
