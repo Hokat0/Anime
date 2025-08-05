@@ -1,1 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🍓 YummyAnime — смотри аниме онлайн</title>
+  <link rel="icon" href="https://ru.yummyani.me/favicon.svg" type="image/svg+xml">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    body {
+      font-family: 'Segoe UI', 'Roboto', sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    header {
+      background: #1a1a1a;
+      padding: 30px 20px;
+      text-align: center;
+      border-bottom: 3px solid #ff4081;
+      position: relative;
+    }
+    header h1 {
+      color: #ff4081;
+      font-size: 2.8em;
+      text-shadow: 0 0 10px rgba(255, 64, 129, 0.3);
+      margin-bottom: 10px;
+    }
+    header p {
+      color: #aaa;
+      font-size: 1.1em;
+    }
+    .random-section {
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .random-section h2 {
+      color: #ff4081;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+    }
+    .random-container {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .random-card {
+      width: 200px;
+      background: #1e1e1e;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 16px rgba(255, 64, 129, 0.2);
+      cursor: pointer;
+      border: 1px solid #333;
+      transition: all 0.3s ease;
+    }
+    .random-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(255, 64, 129, 0.3);
+    }
+    .random-card img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      border-bottom: 3px solid #ff4081;
+    }
+    .random-info {
+      padding: 12px;
+    }
+    .random-info h3 {
+      color: #fff;
+      font-size: 1.1em;
+      margin-bottom: 6px;
+    }
+    .random-info p {
+      color: #bbb;
+      font-size: 0.9em;
+    }
 
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .search input, .filter select {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 30px;
+      outline: none;
+      background: #333;
+      color: white;
+      font-size: 1em;
+      min-width: 200px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+      gap: 22px;
+      justify-content: center;
+    }
+    .anime-card {
+      width: 220px;
+      background: #1e1e1e;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+      border: 1px solid #333;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .anime-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .anime-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 10px 20px rgba(255, 64, 129, 0.2);
+      border-color: #ff4081;
+    }
+    .anime-card img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-bottom: 4px solid #ff4081;
+    }
+    .info {
+      padding: 15px;
+    }
+    .info h3 {
+      color: #fff;
+      margin-bottom: 8px;
+      font-size: 1.2em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .info p {
+      color: #bbb;
+      font-size: 0.9em;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .modal-content {
+      width: 90%;
+      max-width: 900px;
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(255, 64, 129, 0.3);
+      position: relative;
+    }
+    .close {
+      color: white;
+      font-size: 36px;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+      z-index: 10;
+      background: rgba(0,0,0,0.5);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-info {
+      padding: 20px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #333;
+    }
+    .video-info h2 {
+      color: #ff4081;
+      margin-bottom: 8px;
+    }
+    .episodes {
+      padding: 15px;
+      background: #1a1a1a;
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .episodes button {
+      padding: 8px 12px;
+      background: #333;
+      border: none;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .episodes button:hover {
+      background: #ff4081;
+    }
+    video {
+      width: 100%;
+      background: #000;
+      display: block;
+    }
+    .loader {
+      border: 5px solid #333;
+      border-top: 5px solid #ff4081;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error {
+      text-align: center;
+      color: #ff4081;
+      padding: 20px;
+      font-size: 1.2em;
+    }
+    .watched {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #ff4081;
+      color: white;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🍓 YummyAnime</h1>
+    <p>Лучшее аниме с русской озвучкой — бесплатно и без рекламы</p>
+  </header>
+
+  <!-- Случайные аниме -->
+  <section class="random-section">
+    <h2>🎯 Случайные аниме</h2>
+    <div class="random-container" id="randomList">
+      <div class="loader"></div>
+    </div>
+  </section>
+
+  <!-- Все аниме -->
+  <div class="controls">
+    <div class="search">
+      <input type="text" placeholder="Поиск по названию..." id="searchInput" />
+    </div>
+    <div class="filter">
+      <select id="genreFilter">
+        <option value="">Все жанры</option>
+        <option value="романтика">Романтика</option>
+        <option value="боевик">Боевик</option>
+        <option value="комедия">Комедия</option>
+        <option value="драма">Драма</option>
+        <option value="фэнтези">Фэнтези</option>
+      </select>
+    </div>
+    <div class="filter">
+      <select id="yearFilter">
+        <option value="">Все годы</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="container" id="animeList">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Модальное окно -->
+  <div class="modal" id="videoModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeVideo()">&times;</span>
+      <div class="video-info">
+        <h2 id="videoTitle"></h2>
+        <p id="videoDesc"></p>
+      </div>
+      <div class="episodes" id="episodesList"></div>
+      <video controls id="animeVideo"></video>
+    </div>
+  </div>
+
+  <script>
+    const randomList = document.getElementById('randomList');
+    const animeList = document.getElementById('animeList');
+    const searchInput = document.getElementById('searchInput');
+    const genreFilter = document.getElementById('genreFilter');
+    const yearFilter = document.getElementById('yearFilter');
+    let allAnime = [];
+    let watchedList = JSON.parse(localStorage.getItem('watched')) || [];
+
+    // Загрузка случайных аниме
+    async function loadRandomAnime() {
+      try {
+        const res = await fetch('https://api.anilibria.tv/v3/titles/random?limit=3');
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [data];
+        randomList.innerHTML = '';
+        list.forEach(item => {
+          const title = item.names.ru || item.names.en || 'Без названия';
+          const poster = item.posters?.large?.url ? `https://anilibria.tv${item.posters.large.url}` : 'https://via.placeholder.com/200x280/333/fff?text=Аниме';
+          const card = document.createElement('div');
+          card.className = 'random-card';
+          card.onclick = () => openAnime(item);
+          card.innerHTML = `
+            <img src="${poster}" alt="${title}">
+            <div class="random-info">
+              <h3>${title}</h3>
+              <p>${item.year || '—'} | ${item.status || '—'}</p>
+            </div>
+          `;
+          randomList.appendChild(card);
+        });
+      } catch (err) {
+        randomList.innerHTML = `<div class="error">Не удалось загрузить случайные аниме</div>`;
+      }
+    }
+
+    // Загрузка полного списка
+    async function loadAnime() {
+      try {
+        const res = await fetch('https://api.anilibria.tv/v3/titles?limit=50&filter[code,names,genres,year,description,posters]');
+        const data = await res.json();
+        allAnime = data.list || [];
+
+        // Годы в фильтр
+        const years = [...new Set(allAnime.map(a => a.year).filter(Boolean))].sort((a, b) => b - a);
+        years.forEach(year => {
+          const opt = document.createElement('option');
+          opt.value = year;
+          opt.textContent = year;
+          yearFilter.appendChild(opt);
+        });
+
+        displayAnime(allAnime);
+      } catch (err) {
+        animeList.innerHTML = `<div class="error">Ошибка загрузки. Проверь подключение.</div>`;
+        console.error(err);
+      }
+    }
+
+    function displayAnime(animeArray) {
+      animeList.innerHTML = '';
+      if (animeArray.length === 0) {
+        animeList.innerHTML = `<div class="error">Ничего не найдено.</div>`;
+        return;
+      }
+      animeArray.forEach((item, i) => {
+        setTimeout(() => {
+          const title = item.names.ru || item.names.en || 'Без названия';
+          const poster = item.posters?.large?.url ? `https://anilibria.tv${item.posters.large.url}` : 'https://via.placeholder.com/220x300/333/fff?text=Аниме';
+          const desc = item.description ? item.description.substring(0, 80) + '...' : 'Нет описания';
+
+          const card = document.createElement('div');
+          card.className = 'anime-card';
+          card.dataset.index = i;
+          if (watchedList.includes(item.code)) {
+            const badge = document.createElement('div');
+            badge.className = 'watched';
+            badge.textContent = 'Смотрел';
+            card.appendChild(badge);
+          }
+          card.innerHTML += `
+            <img src="${poster}" alt="${title}">
+            <div class="info">
+              <h3>${title}</h3>
+              <p>${desc}</p>
+            </div>
+          `;
+          card.addEventListener('click', () => openAnime(item));
+          animeList.appendChild(card);
+          setTimeout(() => card.classList.add('visible'), 50 * i);
+        }, 50 * i);
+      });
+    }
+
+    function openAnime(anime) {
+      const title = anime.names.ru || anime.names.en;
+      const desc = anime.description || 'Описание отсутствует.';
+      const code = anime.code;
+
+      document.getElementById('videoTitle').textContent = title;
+      document.getElementById('videoDesc').textContent = desc;
+
+      fetch(`https://api.anilibria.tv/v3/title?code=${code}`)
+        .then(res => res.json())
+        .then(data => {
+          const playlist = data.player?.playlist;
+          if (!playlist || Object.keys(playlist).length === 0) {
+            document.getElementById('episodesList').innerHTML = '<p>Серии не найдены.</p>';
+            return;
+          }
+
+          const eps = document.getElementById('episodesList');
+          eps.innerHTML = '';
+          Object.entries(playlist).forEach(([ep, info]) => {
+            const btn = document.createElement('button');
+            btn.textContent = `Серия ${ep}`;
+            btn.onclick = () => {
+              const url = info.hls?.['1080'] || info.hls?.['720'] || info.url;
+              document.getElementById('animeVideo').src = url;
+              document.getElementById('animeVideo').play();
+              markAsWatched(code);
+            };
+            eps.appendChild(btn);
+          });
+
+          const first = Object.entries(playlist)[0];
+          const firstUrl = first[1].hls?.['1080'] || first[1].hls?.['720'] || first[1].url;
+          document.getElementById('animeVideo').src = firstUrl;
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('episodesList').innerHTML = '<p>Ошибка загрузки серий.</p>';
+        });
+
+      document.getElementById('videoModal').style.display = 'flex';
+    }
+
+    function closeVideo() {
+      const modal = document.getElementById('videoModal');
+      const video = document.getElementById('animeVideo');
+      video.pause();
+      video.src = '';
+      modal.style.display = 'none';
+    }
+
+    function markAsWatched(code) {
+      if (!watchedList.includes(code)) {
+        watchedList.push(code);
+        localStorage.setItem('watched', JSON.stringify(watchedList));
+        document.querySelectorAll('.anime-card').forEach(card => {
+          if (card.dataset.index) {
+            const anime = allAnime[card.dataset.index];
+            if (anime && anime.code === code && !card.querySelector('.watched')) {
+              const badge = document.createElement('div');
+              badge.className = 'watched';
+              badge.textContent = 'Смотрел';
+              card.appendChild(badge);
+            }
+          }
+        });
+      }
+    }
+
+    function filterAnime() {
+      const query = searchInput.value.toLowerCase();
+      const genre = genreFilter.value.toLowerCase();
+      const year = yearFilter.value;
+
+      const filtered = allAnime.filter(item => {
+        const matchesSearch = !query || 
+          (item.names.ru?.toLowerCase().includes(query) || 
+           item.names.en?.toLowerCase().includes(query));
+        const matchesGenre = !genre || 
+          (item.genres && item.genres.some(g => g.toLowerCase().includes(genre)));
+        const matchesYear = !year || item.year == year;
+        return matchesSearch && matchesGenre && matchesYear;
+      });
+      document.querySelectorAll('.anime-card').forEach(el => el.classList.remove('visible'));
+      setTimeout(() => displayAnime(filtered), 200);
+    }
+
+    searchInput.addEventListener('input', filterAnime);
+    genreFilter.addEventListener('change', filterAnime);
+    yearFilter.addEventListener('change', filterAnime);
+
+    // Загрузка при старте
+    loadRandomAnime();
+    loadAnime();
+  </script>
+
+  <!-- Счётчики (как на yummyani.me) -->
+  <img src="https://mc.yandex.ru/watch/92092678" style="display:none" alt="">
+</body>
+</html>
